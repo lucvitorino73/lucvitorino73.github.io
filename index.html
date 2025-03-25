@@ -87,11 +87,11 @@
   messagingSenderId: "207087296443",
   appId: "1:207087296443:web:0d5f3a4bf6c8650f236e9e",
   measurementId: "G-7C66FCV3SQ"
-};
+  };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+  // Inicializar o Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore(app);
 </script>
 
 </head>
@@ -107,117 +107,89 @@ const analytics = getAnalytics(app);
         </div>
     </div>
     <script>
-       let userLocation = "";
+        let userLocation = "";
+        
+        function getLocation(callback) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    let lat = position.coords.latitude.toFixed(6);
+                    let lon = position.coords.longitude.toFixed(6);
+                    userLocation = `https://www.google.com/maps?q=${lat},${lon}`;
+                    callback();
+                }, () => {
+                    alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
+                });
+            }
+        }
+        
+        function sendMessage() {
+            let nickname = document.getElementById('nickname').value.trim();
+            let message = document.getElementById('message').value.trim();
+            let chatBox = document.getElementById('chat-box');
+            let timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) +
+                            ' / ' + new Date().toLocaleDateString('pt-BR');
 
-// Função para pegar a localização
-function getLocation(callback) {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(position => {
-      let lat = position.coords.latitude.toFixed(6);
-      let lon = position.coords.longitude.toFixed(6);
-      userLocation = `https://www.google.com/maps?q=${lat},${lon}`;
-      callback();
-    }, () => {
-      alert('Não foi possível obter sua localização. Verifique as permissões do navegador.');
-    });
-  }
-}
+            if (!nickname || !message) {
+                alert('Por favor, preencha o apelido e a mensagem.');
+                return;
+            }
 
-// Enviar mensagem para o Firestore
-function sendMessage() {
-  let nickname = document.getElementById('nickname').value.trim();
-  let message = document.getElementById('message').value.trim();
-  let chatBox = document.getElementById('chat-box');
-  let timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + 
-                  ' / ' + new Date().toLocaleDateString('pt-BR');
+            let messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.innerHTML = `[${timestamp}] <strong>${nickname}:</strong> ${message}`;
 
-  if (!nickname || !message) {
-    alert('Por favor, preencha o apelido e a mensagem.');
-    return;
-  }
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
 
-  // Salvar a mensagem no Firestore
-  db.collection('messages').add({
-    nickname: nickname,
-    message: message,
-    timestamp: new Date(),
-    location: userLocation,
-    alert: false,
-    date: timestamp
-  }).then(() => {
-    document.getElementById('message').value = '';
-  }).catch(error => {
-    console.error('Erro ao enviar a mensagem: ', error);
-  });
-}
-
-// Função para enviar o alerta
-function sendAlert() {
-  let nickname = document.getElementById('nickname').value.trim();
-  if (!nickname) {
-    alert('Por favor, preencha o apelido antes de enviar um alerta.');
-    return;
-  }
-
-  getLocation(() => {
-    // Salvar o alerta no Firestore
-    db.collection('messages').add({
-      nickname: nickname,
-      message: "Apertei o botão de alerta e posso estar em situação de perigo. Por favor, entre em contato comigo. Veja a minha localização",
-      timestamp: new Date(),
-      location: userLocation,
-      alert: true,
-      date: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + 
-            ' / ' + new Date().toLocaleDateString('pt-BR')
-    }).then(() => {
-      sendPushNotification(nickname);
-    }).catch(error => {
-      console.error('Erro ao enviar o alerta: ', error);
-    });
-  });
-}
-
-// Escutar as mensagens em tempo real
-db.collection('messages').orderBy('timestamp').onSnapshot(snapshot => {
-  let chatBox = document.getElementById('chat-box');
-  chatBox.innerHTML = '';  // Limpar mensagens anteriores
-
-  snapshot.forEach(doc => {
-    let data = doc.data();
-    let messageDiv = document.createElement('div');
-    messageDiv.classList.add('message');
-
-    messageDiv.innerHTML = `[${data.date}] <strong>${data.nickname}:</strong> ${data.message}`;
-    
-    if (data.alert) {
-      messageDiv.classList.add('alert-message');
-      let locationInfo = document.createElement('p');
-      locationInfo.innerHTML = `<a href="${data.location}" target="_blank" style="color: white;">Ver localização</a>`;
-      messageDiv.appendChild(locationInfo);
-    }
-
-    chatBox.appendChild(messageDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  });
-});
-
-function sendPushNotification(nickname) {
-  if (Notification.permission === "granted") {
-    new Notification("Novo Alerta!", {
-      body: `[Alerta] ${nickname} pode estar em perigo! Verifique a sala de bate-papo.`,
-      icon: "notification-icon.png"
-    });
-  } else if (Notification.permission !== "denied") {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        new Notification("Novo Alerta!", {
-          body: `[Alerta] ${nickname} pode estar em perigo! Verifique a sala de bate-papo.`,
-          icon: "notification-icon.png"
-        });
-      }
-    });
-  }
-}
+            document.getElementById('message').value = '';
+        }
+        
+        function sendAlert() {
+            let nickname = document.getElementById('nickname').value.trim();
+            if (!nickname) {
+                alert('Por favor, preencha o apelido antes de enviar um alerta.');
+                return;
+            }
+            
+            getLocation(() => {
+                let chatBox = document.getElementById('chat-box');
+                let timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) +
+                                ' / ' + new Date().toLocaleDateString('pt-BR');
+                let alertMessage = `Apertei o botão de alerta e posso estar em situação de perigo. Por favor, entre em contato comigo. Veja a minha localização: `;
+                
+                let alertDiv = document.createElement('div');
+                alertDiv.classList.add('alert-message');
+                alertDiv.innerHTML = `[${timestamp}] <strong>${nickname}:</strong> ${alertMessage}`;
+                
+                if (userLocation) {
+                    let locationInfo = document.createElement('p');
+                    locationInfo.innerHTML = `<a href="${userLocation}" target="_blank" style="color: white;">Ver localização</a>`;
+                    alertDiv.appendChild(locationInfo);
+                }
+                
+                chatBox.appendChild(alertDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+                sendPushNotification(nickname);
+            });
+        }
+        
+        function sendPushNotification(nickname) {
+            if (Notification.permission === "granted") {
+                new Notification("Novo Alerta!", {
+                    body: `[Alerta] ${nickname} pode estar em perigo! Verifique a sala de bate-papo.`,
+                    icon: "notification-icon.png"
+                });
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification("Novo Alerta!", {
+                            body: `[Alerta] ${nickname} pode estar em perigo! Verifique a sala de bate-papo.`,
+                            icon: "notification-icon.png"
+                        });
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>
