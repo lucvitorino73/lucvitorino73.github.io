@@ -80,17 +80,18 @@
 <script>
   // Configuração do Firebase
   const firebaseConfig = {
-    apiKey: "AIzaSyCqUNEp3ao6U1tF4Pjmwy5e0Cs5-Avnb6o",
-    authDomain: "mulheres-em-alerta.firebaseapp.com",
-    projectId: "mulheres-em-alerta",
-    storageBucket: "mulheres-em-alerta.firebasestorage.app",
-    messagingSenderId: "207087296443",
-    appId: "1:207087296443:web:0d5f3a4bf6c8650f236e9e"
-  };
+  apiKey: "AIzaSyCqUNEp3ao6U1tF4Pjmwy5e0Cs5-Avnb6o",
+  authDomain: "mulheres-em-alerta.firebaseapp.com",
+  projectId: "mulheres-em-alerta",
+  storageBucket: "mulheres-em-alerta.firebasestorage.app",
+  messagingSenderId: "207087296443",
+  appId: "1:207087296443:web:0d5f3a4bf6c8650f236e9e",
+  measurementId: "G-7C66FCV3SQ"
+};
 
-  // Inicializar o Firebase
-  const app = firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore(app);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 </script>
 
 </head>
