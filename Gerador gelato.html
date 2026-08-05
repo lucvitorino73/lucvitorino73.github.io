@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Cartão - Canto Superior Esquerdo</title>
+  <!-- Google Fonts: Nunito -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* Configurações Gerais da Tela */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      display: flex;
+      gap: 30px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* Painel de Controles */
+    .controls {
+      flex: 1;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+
+    button {
+      background-color: #d81b60;
+      color: white;
+      border: none;
+      padding: 12px 15px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: #b01248;
+    }
+
+    /* Área de Pré-visualização na Tela */
+    .preview-area {
+      flex: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-start;
+    }
+
+    /* Cartão (80mm x 80mm) */
+    .card {
+      width: 80mm;
+      height: 80mm;
+      position: relative;
+      /* Altere 'fundo.jpg' para o caminho da sua imagem base sem texto */
+      background-image: url('fundo.jpg'); 
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-sizing: border-box;
+    }
+
+    /* POSICIONAMENTO E ESTILOS DOS TEXTOS */
+
+    /* 1. Área da Mensagem (Caixa Superior do Retângulo) */
+    .message-box {
+      position: absolute;
+      top: 47%;
+      left: 27%;
+      width: 58%;
+      height: 22%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .message-text {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 13.5px;
+      line-height: 1.25;
+      color: #6a1325; /* Cor bordô original */
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      width: 100%;
+    }
+
+    /* 2. Área da Assinatura (Caixa Inferior do Retângulo) */
+    .signature-box {
+      position: absolute;
+      top: 75.5%;
+      left: 25%;
+      width: 60%;
+      height: 10%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .signature-text {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      font-size: 14.5px;
+      color: #6a1325;
+      word-wrap: break-word;
+      width: 100%;
+    }
+
+    /* REGRAS DE IMPRESSÃO A4 (Topo Superior Esquerdo) */
+    @media print {
+      body {
+        background: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .controls {
+        display: none !important;
+      }
+
+      .container {
+        display: block;
+        margin: 0;
+        padding: 0;
+      }
+
+      @page {
+        size: A4 portrait;
+        margin: 10mm; /* Margem de segurança configurável (mude para 0mm se sua impressora imprimir sem bordas) */
+      }
+
+      .preview-area {
+        width: auto;
+        height: auto;
+        display: block;
+        padding: 0;
+        margin: 0;
+      }
+
+      .card {
+        box-shadow: none;
+        margin: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Formulário de Edição -->
+    <div class="controls">
+      <h2>Editar Cartão</h2>
+      
+      <div class="form-group">
+        <label for="input-message">Mensagem:</label>
+        <textarea id="input-message" rows="4">Mariana, sinto saudade do seu futum. Bjos!</textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="input-signature">Assinatura:</label>
+        <input type="text" id="input-signature" value="Neném">
+      </div>
+
+      <button onclick="window.print()">Imprimir Cartão</button>
+    </div>
+
+    <!-- Pré-visualização do Cartão -->
+    <div class="preview-area">
+      <div class="card">
+        <!-- Caixa da Mensagem -->
+        <div class="message-box">
+          <div class="message-text" id="display-message"></div>
+        </div>
+
+        <!-- Caixa da Assinatura -->
+        <div class="signature-box">
+          <div class="signature-text" id="display-signature"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Referências dos elementos DOM
+    const inputMessage = document.getElementById('input-message');
+    const inputSignature = document.getElementById('input-signature');
+    const displayMessage = document.getElementById('display-message');
+    const displaySignature = document.getElementById('display-signature');
+
+    // Função de atualização
+    function updateCard() {
+      displayMessage.innerText = inputMessage.value;
+      displaySignature.innerText = inputSignature.value;
+    }
+
+    // Ouvintes de eventos para atualização dinâmica
+    inputMessage.addEventListener('input', updateCard);
+    inputSignature.addEventListener('input', updateCard);
+
+    // Executa ao carregar a página
+    updateCard();
+  </script>
+
+</body>
+</html>
